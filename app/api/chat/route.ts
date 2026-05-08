@@ -36,7 +36,7 @@ const ParsedIntentSchema = z.object({
 export async function POST(req: Request) {
   const { messages, userAddress } = await req.json();
 
-  const result = streamText({
+  return streamText({
     model,
     system: INTENT_SYSTEM_PROMPT,
     messages,
@@ -100,7 +100,5 @@ export async function POST(req: Request) {
         },
       }),
     },
-  });
-
-  return result.toDataStreamResponse();
+  }).toDataStreamResponse();
 }

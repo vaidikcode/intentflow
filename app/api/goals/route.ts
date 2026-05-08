@@ -41,7 +41,7 @@ const AutomationSchema = z.object({
 export async function POST(req: Request) {
   const { messages, userAddress } = await req.json();
 
-  const result = streamText({
+  return streamText({
     model,
     system: GOALS_SYSTEM_PROMPT,
     messages,
@@ -96,7 +96,5 @@ export async function POST(req: Request) {
         },
       }),
     },
-  });
-
-  return result.toDataStreamResponse();
+  }).toDataStreamResponse();
 }
