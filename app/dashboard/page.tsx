@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Wallet, ArrowRight, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import { Wallet, Zap, ArrowRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { IntentChat } from '@/components/IntentChat';
 import { IntentList } from '@/components/IntentList';
 import { StatsBar } from '@/components/StatsBar';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import type { Intent } from '@/types/intent';
 
@@ -17,128 +16,123 @@ export default function DashboardPage() {
   const { address, isConnected } = useAccount();
   const [refreshKey, setRefreshKey] = useState(0);
   const [intents, setIntents] = useState<Intent[]>([]);
-  const [panel, setPanel] = useState<'chat' | 'intents'>('chat');
+  const [panel, setPanel] = useState<'chat' | 'automations'>('chat');
 
   useEffect(() => {
     if (!address) return;
     fetch(`/api/intents?address=${address}`)
-      .then((r) => r.json())
-      .then((d) => setIntents(d.intents ?? []));
+      .then(r => r.json())
+      .then(d => setIntents(d.intents ?? []));
   }, [address, refreshKey]);
 
-  const onIntentSaved = () => setRefreshKey((k) => k + 1);
+  const onIntentSaved = () => setRefreshKey(k => k + 1);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
       <Header />
 
-      {/* Mobile panel toggle */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background flex">
-        <button
-          className={cn(
-            'flex-1 py-3 text-xs font-medium transition-colors',
-            panel === 'chat' ? 'text-foreground' : 'text-muted-foreground'
-          )}
-          onClick={() => setPanel('chat')}
-        >
-          Chat
-        </button>
-        <Separator orientation="vertical" className="h-auto" />
-        <button
-          className={cn(
-            'flex-1 py-3 text-xs font-medium transition-colors',
-            panel === 'intents' ? 'text-foreground' : 'text-muted-foreground'
-          )}
-          onClick={() => setPanel('intents')}
-        >
-          Intents {intents.length > 0 && `(${intents.length})`}
-        </button>
+      {/* Mobile tab switcher */}
+      <div className="md:hidden border-b-2 border-[#0A0A0A] bg-white flex">
+        {(['chat', 'automations'] as const).map((p, i) => (
+          <button
+            key={p}
+            onClick={() => setPanel(p)}
+            className={cn(
+              'flex-1 py-3 text-xs font-black uppercase tracking-widest transition-colors',
+              i === 0 && 'border-r-2 border-[#0A0A0A]',
+              panel === p ? 'bg-[#0A0A0A] text-white' : 'hover:bg-[#F5E642]'
+            )}
+          >
+            {p === 'chat' ? '💬 New automation' : `📋 Mine (${intents.length})`}
+          </button>
+        ))}
       </div>
 
-      <main className="pt-14 flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col">
         {!isConnected ? (
-          /* ── Not connected ── */
-          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-            <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center mb-6">
-              <Wallet className="w-5 h-5 text-muted-foreground" />
+          /* Not connected */
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-8">
+            <div className="neo-card-yellow p-10 max-w-md w-full">
+              <div className="w-16 h-16 bg-[#0A0A0A] border-2 border-[#0A0A0A] flex items-center justify-center mx-auto mb-6 shadow-neo">
+                <Wallet className="w-8 h-8 text-[#F5E642]" />
+              </div>
+              <h1 className="font-black text-3xl mb-3">Connect your wallet</h1>
+              <p className="font-medium text-[#0A0A0A]/70 mb-8 leading-relaxed">
+                Connect to start setting up automations. Your money stays in your wallet — we just run the rules you set.
+              </p>
+              <ConnectButton />
+              <p className="text-xs font-bold text-[#0A0A0A]/40 mt-4">
+                Test network — no real money required
+              </p>
             </div>
-            <h2 className="text-lg font-semibold mb-2">Connect your wallet</h2>
-            <p className="text-sm text-muted-foreground mb-8 max-w-xs">
-              Connect to create and manage on-chain intent automations. Base Sepolia testnet — no real funds required.
-            </p>
-            <ConnectButton />
+
+            <div className="flex gap-4 text-sm font-bold">
+              <Link href="/how-it-works" className="flex items-center gap-1 hover:underline underline-offset-4">
+                How it works <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link href="/goals" className="flex items-center gap-1 hover:underline underline-offset-4">
+                Set a goal <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         ) : (
-          /* ── Connected ── */
-          <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full">
+          /* Connected — split pane */
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
             {/* Left: Chat */}
-            <div
-              className={cn(
-                'flex flex-col border-r border-border',
-                'md:w-[480px] md:flex md:flex-col',
-                panel === 'chat' ? 'flex flex-col flex-1' : 'hidden md:flex',
-                'h-[calc(100vh-56px)]'
-              )}
-            >
+            <div className={cn(
+              'flex flex-col border-r-2 border-[#0A0A0A]',
+              'md:w-[440px] md:flex',
+              panel === 'chat' ? 'flex flex-col flex-1 md:flex-none' : 'hidden md:flex'
+            )}>
               {/* Chat header */}
-              <div className="px-4 py-3 border-b border-border shrink-0">
-                <p className="text-xs font-medium">New Intent</p>
-                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                  Powered by Claude 3.5 Sonnet · Vercel AI SDK
-                </p>
+              <div className="border-b-2 border-[#0A0A0A] px-5 py-3 bg-white flex items-center justify-between shrink-0">
+                <div>
+                  <p className="font-black text-sm">New Automation</p>
+                  <p className="text-xs font-medium text-[#0A0A0A]/50">Tell me what you want to happen</p>
+                </div>
+                <Link href="/goals" className="neo-btn-yellow text-xs px-3 py-1.5 flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> Set a goal
+                </Link>
               </div>
-
-              {/* Chat body */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden bg-[#FAFAFA]">
                 <IntentChat userAddress={address!} onIntentSaved={onIntentSaved} />
               </div>
             </div>
 
-            {/* Right: Intents + stats */}
-            <div
-              className={cn(
-                'flex-1 flex flex-col overflow-y-auto',
-                panel === 'intents' ? 'flex' : 'hidden md:flex',
-                'pb-16 md:pb-0'
-              )}
-            >
-              {/* Wallet info bar */}
-              <div className="px-6 py-3 border-b border-border flex items-center gap-3 shrink-0">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-foreground shrink-0" />
-                  <span className="text-xs font-mono text-muted-foreground truncate">{address}</span>
-                </div>
-                <a
-                  href={`https://sepolia.basescan.org/address/${address}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0"
-                >
-                  BaseScan <ExternalLink className="w-3 h-3" />
-                </a>
+            {/* Right: Automations */}
+            <div className={cn(
+              'flex-1 flex flex-col overflow-y-auto bg-white',
+              panel === 'automations' ? 'flex' : 'hidden md:flex'
+            )}>
+              {/* Wallet bar */}
+              <div className="border-b-2 border-[#0A0A0A] px-6 py-3 flex items-center gap-3 shrink-0 bg-[#0A0A0A] text-white">
+                <span className="w-2 h-2 rounded-full bg-[#00C853] shrink-0" />
+                <span className="text-xs font-mono font-bold truncate flex-1">{address}</span>
+                <span className="text-xs font-bold text-white/50 shrink-0">Test Network</span>
               </div>
 
               {/* Stats */}
-              <div className="px-6 pt-4 pb-2 shrink-0">
+              <div className="px-6 pt-6 pb-3 shrink-0">
                 <StatsBar intents={intents} />
               </div>
 
-              {/* Intent list */}
-              <div className="px-6 py-4 flex-1">
-                <IntentList userAddress={address!} refreshKey={refreshKey} />
-              </div>
+              {/* Goal promo (if no intents) */}
+              {intents.length === 0 && (
+                <div className="mx-6 mb-4">
+                  <Link href="/goals" className="neo-card-yellow p-4 flex items-center gap-3 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-sm transition-all block">
+                    <span className="text-2xl">🎯</span>
+                    <div className="flex-1">
+                      <p className="font-black text-sm">Have a savings goal?</p>
+                      <p className="text-xs font-medium text-[#0A0A0A]/60">Tell us and we'll build the whole plan automatically</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 shrink-0" />
+                  </Link>
+                </div>
+              )}
 
-              {/* Footer links */}
-              <div className="px-6 py-4 border-t border-border shrink-0 flex items-center gap-4 text-xs text-muted-foreground font-mono">
-                <a href="https://github.com/vaidikcode/intentflow" target="_blank" rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors flex items-center gap-1">
-                  GitHub <ArrowRight className="w-3 h-3" />
-                </a>
-                <a href="https://sepolia.basescan.org" target="_blank" rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors flex items-center gap-1">
-                  Explorer <ArrowRight className="w-3 h-3" />
-                </a>
-                <span className="ml-auto">Base Sepolia</span>
+              {/* Intent list */}
+              <div className="px-6 pb-8 flex-1">
+                <IntentList userAddress={address!} refreshKey={refreshKey} />
               </div>
             </div>
           </div>

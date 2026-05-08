@@ -5,24 +5,24 @@ interface StatsBarProps {
 }
 
 export function StatsBar({ intents }: StatsBarProps) {
-  const active = intents.filter((i) => i.status === 'active').length;
-  const pending = intents.filter((i) => i.status === 'pending').length;
-  const executed = intents.filter((i) => i.status === 'executed').length;
+  const running = intents.filter((i) => i.status === 'active').length;
+  const scheduled = intents.filter((i) => i.status === 'pending').length;
+  const done = intents.filter((i) => i.status === 'executed').length;
   const totalRuns = intents.reduce((s, i) => s + i.execution_count, 0);
 
   const stats = [
-    { label: 'Active', value: active },
-    { label: 'Pending', value: pending },
-    { label: 'Completed', value: executed },
-    { label: 'Total Runs', value: totalRuns },
+    { label: 'Running now', value: running, bg: 'bg-[#00C853]', text: 'text-white' },
+    { label: 'Scheduled', value: scheduled, bg: 'bg-[#F5E642]', text: 'text-[#0A0A0A]' },
+    { label: 'Completed', value: done, bg: 'bg-[#0A0A0A]', text: 'text-white' },
+    { label: 'Total runs', value: totalRuns, bg: 'bg-white', text: 'text-[#0A0A0A]' },
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-px border border-border rounded-lg overflow-hidden bg-border">
-      {stats.map(({ label, value }) => (
-        <div key={label} className="bg-background px-4 py-3">
-          <p className="text-xl font-semibold font-mono">{value}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+    <div className="grid grid-cols-4 border-2 border-[#0A0A0A] shadow-neo overflow-hidden">
+      {stats.map(({ label, value, bg, text }, i) => (
+        <div key={label} className={`${bg} ${text} p-4 ${i < 3 ? 'border-r-2 border-[#0A0A0A]' : ''}`}>
+          <p className="text-3xl font-black leading-none">{value}</p>
+          <p className="text-xs font-bold uppercase tracking-wide mt-1 opacity-70">{label}</p>
         </div>
       ))}
     </div>

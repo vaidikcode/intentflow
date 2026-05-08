@@ -1,13 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ChevronDown, ChevronUp, X, ExternalLink, Clock,
-  Repeat, ArrowLeftRight, TrendingDown, TrendingUp, Zap,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { ChevronDown, ChevronUp, Pause, ArrowLeftRight, TrendingDown, TrendingUp, Repeat, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Intent } from '@/types/intent';
 
@@ -17,34 +11,28 @@ interface IntentCardProps {
 }
 
 const ACTION_ICONS: Record<string, React.ReactNode> = {
-  swap: <ArrowLeftRight className="w-3.5 h-3.5" />,
-  buy: <TrendingUp className="w-3.5 h-3.5" />,
-  sell: <TrendingDown className="w-3.5 h-3.5" />,
-  transfer: <Zap className="w-3.5 h-3.5" />,
-  stake: <Repeat className="w-3.5 h-3.5" />,
+  swap: <ArrowLeftRight className="w-4 h-4" />,
+  buy: <TrendingUp className="w-4 h-4" />,
+  sell: <TrendingDown className="w-4 h-4" />,
+  transfer: <Zap className="w-4 h-4" />,
+  stake: <Repeat className="w-4 h-4" />,
 };
 
-const TRIGGER_LABELS: Record<string, string> = {
-  price_above: 'Price ↑',
-  price_below: 'Price ↓',
-  price_change_percent: 'Price Δ%',
-  time_recurring: 'Recurring',
-  time_once: 'One-time',
-  gas_below: 'Gas ↓',
-  manual: 'Manual',
-  compound: 'Compound',
+// Plain English status labels — zero jargon
+const STATUS_LABEL: Record<string, string> = {
+  active: 'RUNNING',
+  pending: 'SCHEDULED',
+  executed: 'DONE',
+  failed: 'FAILED',
+  cancelled: 'PAUSED',
 };
-
-function StatusBadge({ status }: { status: Intent['status'] }) {
-  const cls: Record<string, string> = {
-    active: 'status-active',
-    pending: 'status-pending',
-    executed: 'status-executed',
-    failed: 'status-failed',
-    cancelled: 'status-cancelled',
-  };
-  return <span className={cn(cls[status] ?? 'status-pending')}>{status}</span>;
-}
+const STATUS_CLASS: Record<string, string> = {
+  active: 'status-running',
+  pending: 'status-scheduled',
+  executed: 'status-done',
+  failed: 'status-failed',
+  cancelled: 'status-paused',
+};
 
 export function IntentCard({ intent, onCancel }: IntentCardProps) {
   const [expanded, setExpanded] = useState(false);
@@ -61,106 +49,95 @@ export function IntentCard({ intent, onCancel }: IntentCardProps) {
   };
 
   const created = new Date(intent.created_at).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    month: 'short', day: 'numeric',
   });
 
-  const confidencePct = Math.round(intent.parsed.confidence * 100);
-
   return (
-    <div className="border border-border rounded-lg p-4 bg-card hover:border-foreground/20 transition-colors animate-fade-in">
-      {/* Top */}
+    <div className="neo-card-hover p-4 animate-fade-in">
+      {/* Top row */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2.5 flex-1 min-w-0">
-          <div className="w-7 h-7 rounded border border-border flex items-center justify-center shrink-0 mt-0.5">
-            {ACTION_ICONS[intent.parsed.action] ?? <Zap className="w-3.5 h-3.5" />}
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="w-9 h-9 bg-[#F5E642] border-2 border-[#0A0A0A] flex items-center justify-center shrink-0 shadow-neo-sm mt-0.5">
+            {ACTION_ICONS[intent.parsed.action] ?? <Zap className="w-4 h-4" />}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{intent.parsed.summary}</p>
-            <p className="text-xs text-muted-foreground mt-0.5 font-mono truncate">{intent.raw_text}</p>
+            <p className="font-black text-sm leading-snug truncate">{intent.parsed.summary}</p>
+            <p className="text-xs font-medium text-[#0A0A0A]/50 mt-0.5 truncate">{intent.raw_text}</p>
           </div>
         </div>
-        <StatusBadge status={intent.status} />
+        <span className={cn('shrink-0 neo-tag text-[10px]', STATUS_CLASS[intent.status] ?? 'status-scheduled')}>
+          {STATUS_LABEL[intent.status] ?? 'SCHEDULED'}
+        </span>
       </div>
 
       {/* Meta */}
-      <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1 font-mono">
-          <Clock className="w-3 h-3" />{created}
-        </span>
-        <span className="font-mono">
-          {TRIGGER_LABELS[intent.parsed.trigger] ?? intent.parsed.trigger}
-          {intent.parsed.triggerValue ? ` ${intent.parsed.triggerValue}` : ''}
-        </span>
+      <div className="flex items-center gap-3 mt-3 text-xs font-bold text-[#0A0A0A]/40">
+        <span>Set up {created}</span>
         {intent.execution_count > 0 && (
-          <span className="flex items-center gap-1 font-mono">
-            <Repeat className="w-3 h-3" />{intent.execution_count}×
+          <span className="bg-[#F5E642] border border-[#0A0A0A] px-1.5 py-0.5 text-[#0A0A0A]">
+            ran {intent.execution_count}×
           </span>
         )}
-        <span className="ml-auto font-mono">{confidencePct}% conf.</span>
+        <span className="ml-auto">{Math.round(intent.parsed.confidence * 100)}% match</span>
       </div>
 
-      {/* Confidence bar */}
-      <div className="mt-2.5 h-0.5 bg-muted rounded-full overflow-hidden">
+      {/* Progress bar */}
+      <div className="mt-2 h-1.5 bg-[#0A0A0A]/10 border border-[#0A0A0A]/10">
         <div
-          className="h-full bg-foreground rounded-full transition-all"
-          style={{ width: `${confidencePct}%` }}
+          className="h-full bg-[#0A0A0A] transition-all"
+          style={{ width: `${Math.round(intent.parsed.confidence * 100)}%` }}
         />
       </div>
 
       {/* Expanded */}
       {expanded && (
-        <div className="mt-3 pt-3 border-t border-border space-y-3 animate-fade-in">
+        <div className="mt-3 pt-3 border-t-2 border-[#0A0A0A]/10 space-y-2 animate-fade-in">
           <div className="grid grid-cols-2 gap-2 text-xs">
-            {(['fromToken', 'toToken', 'amount', 'slippage'] as const).map((key) =>
-              intent.parsed[key] != null ? (
-                <div key={key}>
-                  <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                  <p className="font-mono font-medium mt-0.5">{String(intent.parsed[key])}</p>
-                </div>
-              ) : null
+            {intent.parsed.fromToken && (
+              <div className="border-2 border-[#0A0A0A] p-2 bg-white">
+                <p className="font-bold text-[#0A0A0A]/40 uppercase">From</p>
+                <p className="font-black">{intent.parsed.fromToken}</p>
+              </div>
+            )}
+            {intent.parsed.toToken && (
+              <div className="border-2 border-[#0A0A0A] p-2 bg-white">
+                <p className="font-bold text-[#0A0A0A]/40 uppercase">To</p>
+                <p className="font-black">{intent.parsed.toToken}</p>
+              </div>
+            )}
+            {intent.parsed.amount && (
+              <div className="border-2 border-[#0A0A0A] p-2 bg-white">
+                <p className="font-bold text-[#0A0A0A]/40 uppercase">Amount</p>
+                <p className="font-black">${intent.parsed.amount}</p>
+              </div>
             )}
           </div>
           {intent.parsed.warnings && intent.parsed.warnings.length > 0 && (
-            <div className="text-xs bg-amber-50 border border-amber-100 rounded-md p-2.5 text-amber-700">
+            <div className="border-2 border-[#0A0A0A] bg-[#F5E642] p-2.5 text-xs font-bold">
               {intent.parsed.warnings.map((w, i) => <p key={i}>⚠ {w}</p>)}
             </div>
-          )}
-          {intent.on_chain_hash && (
-            <a
-              href={`https://sepolia.basescan.org/tx/${intent.on_chain_hash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-mono"
-            >
-              {intent.on_chain_hash.slice(0, 14)}…
-              <ExternalLink className="w-3 h-3" />
-            </a>
           )}
         </div>
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 text-xs gap-1 text-muted-foreground"
-          onClick={() => setExpanded((e) => !e)}
+      <div className="flex items-center justify-between mt-3 pt-3 border-t-2 border-[#0A0A0A]/10">
+        <button
+          onClick={() => setExpanded(e => !e)}
+          className="flex items-center gap-1 text-xs font-bold text-[#0A0A0A]/50 hover:text-[#0A0A0A] transition-colors"
         >
           {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          {expanded ? 'Collapse' : 'Details'}
-        </Button>
+          {expanded ? 'Less' : 'Details'}
+        </button>
         {intent.status !== 'cancelled' && intent.status !== 'executed' && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs gap-1 text-muted-foreground hover:text-destructive"
+          <button
             onClick={handleCancel}
             disabled={cancelling}
+            className="flex items-center gap-1 text-xs font-bold text-[#0A0A0A]/50 hover:text-[#FF3B3B] transition-colors disabled:opacity-40"
           >
-            <X className="w-3 h-3" />
-            {cancelling ? 'Cancelling…' : 'Cancel'}
-          </Button>
+            <Pause className="w-3 h-3" />
+            {cancelling ? 'Pausing…' : 'Pause'}
+          </button>
         )}
       </div>
     </div>

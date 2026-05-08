@@ -2,70 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 0 0% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 0 0% 4%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 52 90% 60%;
+    --secondary-foreground: 0 0% 4%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 52 90% 60%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --radius: 0.5rem;
+    --border: 0 0% 4%;
+    --input: 0 0% 4%;
+    --ring: 0 0% 4%;
+    --radius: 2px;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border;
-    box-sizing: border-box;
-  }
+  * { @apply border-border box-border; }
+
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-[#FAFAFA] text-[#0A0A0A] antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-muted;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground;
-  }
+
+  h1, h2, h3, h4 { @apply font-black tracking-tight; }
 }
 
 @layer components {
-  /* Chat message styles */
-  .chat-message-user {
-    @apply ml-auto max-w-[80%] rounded-2xl rounded-br-sm bg-foreground text-background px-4 py-2.5 text-sm;
+  /* ── Neo-brutalism core ── */
+  .neo-card {
+    @apply bg-white border-2 border-[#0A0A0A] shadow-neo;
   }
-  .chat-message-ai {
-    @apply mr-auto max-w-[85%] rounded-2xl rounded-bl-sm border border-border bg-card px-4 py-2.5 text-sm;
+  .neo-card-yellow {
+    @apply bg-[#F5E642] border-2 border-[#0A0A0A] shadow-neo;
   }
+  .neo-card-hover {
+    @apply neo-card transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-sm;
+  }
+  .neo-btn {
+    @apply bg-[#0A0A0A] text-white border-2 border-[#0A0A0A] shadow-neo font-bold px-5 py-2.5
+           transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-sm
+           active:translate-x-[4px] active:translate-y-[4px] active:shadow-none
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-neo;
+  }
+  .neo-btn-yellow {
+    @apply bg-[#F5E642] text-[#0A0A0A] border-2 border-[#0A0A0A] shadow-neo font-bold px-5 py-2.5
+           transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-sm
+           active:translate-x-[4px] active:translate-y-[4px] active:shadow-none
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .neo-btn-outline {
+    @apply bg-white text-[#0A0A0A] border-2 border-[#0A0A0A] shadow-neo font-bold px-5 py-2.5
+           transition-all duration-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neo-sm
+           active:translate-x-[4px] active:translate-y-[4px] active:shadow-none;
+  }
+  .neo-input {
+    @apply bg-white border-2 border-[#0A0A0A] px-4 py-2.5 font-medium w-full
+           focus:outline-none focus:shadow-neo-yellow transition-shadow duration-100
+           placeholder:text-[#0A0A0A]/30;
+  }
+  .neo-tag {
+    @apply inline-block border-2 border-[#0A0A0A] px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide;
+  }
+  .neo-tag-yellow { @apply neo-tag bg-[#F5E642]; }
+  .neo-tag-green  { @apply neo-tag bg-[#00C853] text-white; }
+  .neo-tag-red    { @apply neo-tag bg-[#FF3B3B] text-white; }
+  .neo-tag-black  { @apply neo-tag bg-[#0A0A0A] text-white; }
+  .neo-tag-white  { @apply neo-tag bg-white; }
 
-  /* Intent status pills */
-  .status-active   { @apply bg-black text-white text-xs px-2 py-0.5 rounded-full font-medium; }
-  .status-pending  { @apply bg-zinc-100 text-zinc-700 border border-zinc-200 text-xs px-2 py-0.5 rounded-full font-medium; }
-  .status-executed { @apply bg-zinc-800 text-white text-xs px-2 py-0.5 rounded-full font-medium; }
-  .status-failed   { @apply bg-red-50 text-red-600 border border-red-100 text-xs px-2 py-0.5 rounded-full font-medium; }
-  .status-cancelled{ @apply bg-zinc-50 text-zinc-400 border border-zinc-100 text-xs px-2 py-0.5 rounded-full font-medium; }
+  /* ── Status tags ── */
+  .status-running   { @apply neo-tag-green; }
+  .status-scheduled { @apply neo-tag-yellow; }
+  .status-done      { @apply neo-tag-black; }
+  .status-failed    { @apply neo-tag-red; }
+  .status-paused    { @apply neo-tag-white; }
+
+  /* ── Section divider ── */
+  .neo-divider { @apply border-t-2 border-[#0A0A0A]; }
+
+  /* ── Chat bubbles ── */
+  .chat-user {
+    @apply ml-auto max-w-[80%] bg-[#0A0A0A] text-white border-2 border-[#0A0A0A]
+           px-4 py-3 text-sm font-medium shadow-neo;
+  }
+  .chat-ai {
+    @apply mr-auto max-w-[85%] bg-white border-2 border-[#0A0A0A]
+           px-4 py-3 text-sm font-medium shadow-neo;
+  }
 }

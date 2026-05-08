@@ -2,12 +2,7 @@
 
 import { useChat } from 'ai/react';
 import { useRef, useEffect } from 'react';
-import { Send, Loader2, Zap, Bot, User, CheckCircle2, AlertCircle, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Send, Loader2, CheckCircle2, AlertTriangle, RotateCcw, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface IntentChatProps {
@@ -16,10 +11,10 @@ interface IntentChatProps {
 }
 
 const SUGGESTIONS = [
-  'Buy $50 of ETH every Monday at 9am',
-  'Sell half my ETH if price drops 20% in 24h',
-  'Swap all USDC to ETH when price dips below $2,500',
-  'Move staking rewards to cold wallet when gas < 15 gwei',
+  '📅 Buy $50 of Bitcoin every Monday',
+  '📉 Buy more ETH if price drops 20%',
+  '💰 Move my profits to savings automatically',
+  '🛡️ Sell everything if my investment drops 40%',
 ];
 
 type ToolResult =
@@ -27,256 +22,164 @@ type ToolResult =
   | { type: 'intent_saved'; intentId: string; summary: string }
   | { type: 'save_error'; error: string };
 
-function ParsedIntentCard({ data }: { data: Record<string, unknown> }) {
+function ParsedCard({ data }: { data: Record<string, unknown> }) {
+  const confidence = Math.round(((data.confidence as number) ?? 0) * 100);
   return (
-    <div className="border border-border rounded-lg p-4 mt-2 space-y-3 bg-background animate-fade-in">
+    <div className="neo-card p-4 mt-2 animate-fade-in space-y-3">
       <div className="flex items-center gap-2">
-        <div className="w-5 h-5 rounded-full bg-foreground flex items-center justify-center">
-          <Zap className="w-3 h-3 text-background" />
+        <div className="w-6 h-6 bg-[#F5E642] border-2 border-[#0A0A0A] flex items-center justify-center">
+          <Zap className="w-3 h-3" />
         </div>
-        <span className="text-sm font-medium">Parsed Intent</span>
-        <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-          {Math.round(((data.confidence as number) ?? 0) * 100)}% confidence
-        </Badge>
+        <span className="font-black text-sm">Here's what I understood</span>
+        <span className={cn(
+          'ml-auto text-xs font-black px-2 py-0.5 border-2 border-[#0A0A0A]',
+          confidence >= 80 ? 'bg-[#00C853] text-white' : 'bg-[#F5E642]'
+        )}>
+          {confidence}% clear
+        </span>
       </div>
 
-      <Separator />
-
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-        <div>
-          <span className="text-muted-foreground">Action</span>
-          <p className="font-mono font-medium mt-0.5">{String(data.action ?? '—')}</p>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Trigger</span>
-          <p className="font-mono font-medium mt-0.5">{String(data.trigger ?? '—')}</p>
-        </div>
-        {data.fromToken && (
-          <div>
-            <span className="text-muted-foreground">From</span>
-            <p className="font-mono font-medium mt-0.5">{String(data.fromToken)}</p>
-          </div>
-        )}
-        {data.toToken && (
-          <div>
-            <span className="text-muted-foreground">To</span>
-            <p className="font-mono font-medium mt-0.5">{String(data.toToken)}</p>
-          </div>
-        )}
-        {data.amount && (
-          <div>
-            <span className="text-muted-foreground">Amount</span>
-            <p className="font-mono font-medium mt-0.5">
-              {String(data.amount)} ({String(data.amountType ?? 'fixed')})
-            </p>
-          </div>
-        )}
-        {data.triggerValue && (
-          <div>
-            <span className="text-muted-foreground">Trigger value</span>
-            <p className="font-mono font-medium mt-0.5">{String(data.triggerValue)}</p>
-          </div>
-        )}
+      <div className="bg-[#F5E642] border-2 border-[#0A0A0A] p-3">
+        <p className="font-black">{String(data.summary ?? '')}</p>
       </div>
 
-      {Array.isArray(data.warnings) && data.warnings.length > 0 && (
-        <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-md p-2.5">
-          <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-          <ul className="space-y-0.5">
-            {(data.warnings as string[]).map((w: string, i: number) => <li key={i}>{w}</li>)}
-          </ul>
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        {data.fromToken && <div><span className="font-bold text-[#0A0A0A]/50">FROM</span><p className="font-black">{String(data.fromToken)}</p></div>}
+        {data.toToken && <div><span className="font-bold text-[#0A0A0A]/50">TO</span><p className="font-black">{String(data.toToken)}</p></div>}
+        {data.amount && <div><span className="font-bold text-[#0A0A0A]/50">AMOUNT</span><p className="font-black">${String(data.amount)}</p></div>}
+        {data.triggerValue && <div><span className="font-bold text-[#0A0A0A]/50">WHEN</span><p className="font-black">{String(data.triggerValue)}</p></div>}
+      </div>
+
+      {Array.isArray(data.warnings) && (data.warnings as string[]).length > 0 && (
+        <div className="flex items-start gap-2 border-2 border-[#0A0A0A] bg-[#F5E642] p-2.5">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="text-xs font-bold space-y-0.5">
+            {(data.warnings as string[]).map((w, i) => <p key={i}>{w}</p>)}
+          </div>
         </div>
       )}
-
-      <p className="text-xs text-muted-foreground">
-        Reply <span className="font-mono font-medium text-foreground">"yes"</span> to activate, or describe changes.
+      <p className="text-xs font-bold text-[#0A0A0A]/50">
+        Reply <span className="font-black text-[#0A0A0A]">"yes"</span> to activate, or tell me what to change.
       </p>
     </div>
   );
 }
 
-function SavedIntentCard({ summary, intentId }: { summary: string; intentId: string }) {
+function SavedCard({ summary }: { summary: string }) {
   return (
-    <div className="border border-border rounded-lg p-4 mt-2 bg-background animate-fade-in">
-      <div className="flex items-center gap-2">
-        <CheckCircle2 className="w-4 h-4" />
-        <span className="text-sm font-medium">Intent Activated</span>
+    <div className="neo-card-yellow p-4 mt-2 animate-fade-in">
+      <div className="flex items-center gap-2 mb-2">
+        <CheckCircle2 className="w-5 h-5" />
+        <span className="font-black">Automation activated! 🚀</span>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">{summary}</p>
-      <p className="text-[10px] font-mono text-muted-foreground mt-1">ID: {intentId.slice(0, 8)}…</p>
+      <p className="text-sm font-bold text-[#0A0A0A]/70">{summary}</p>
+      <p className="text-xs font-bold text-[#0A0A0A]/40 mt-1">You can pause or cancel this anytime from your dashboard.</p>
     </div>
   );
 }
 
 export function IntentChat({ userAddress, onIntentSaved }: IntentChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const { messages, input, handleInputChange, handleSubmit, isLoading, setInput, reload } = useChat({
     api: '/api/chat',
     body: { userAddress },
-    onFinish: (message) => {
-      // Check if a saveIntent tool was called → refresh intent list
-      if (message.content && message.content.toString().includes('intent_saved')) {
-        onIntentSaved();
-      }
+    onFinish: (msg) => {
+      if (typeof msg.content === 'string' && msg.content.includes('intent_saved')) onIntentSaved();
     },
   });
 
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (input.trim() && !isLoading) {
-        handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
-      }
+      if (input.trim() && !isLoading) handleSubmit(e as unknown as React.FormEvent);
     }
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages */}
-      <ScrollArea className="flex-1 px-4 py-4">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center gap-6 py-8 text-center">
-            <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center">
-              <Bot className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-medium mb-1">Describe your automation</p>
-              <p className="text-xs text-muted-foreground max-w-xs">
-                Tell me what you want to automate in plain English. I'll parse it and deploy it on-chain.
+          <div className="h-full flex flex-col justify-center gap-5">
+            <div className="neo-card-yellow p-5 text-center">
+              <p className="text-3xl mb-2">💬</p>
+              <p className="font-black text-lg">What do you want to automate?</p>
+              <p className="text-sm font-medium text-[#0A0A0A]/60 mt-1">
+                Describe it in plain English — no crypto knowledge needed.
               </p>
             </div>
-            <div className="flex flex-col gap-2 w-full max-w-sm">
+            <div className="space-y-2">
+              <p className="text-xs font-black uppercase tracking-widest text-[#0A0A0A]/40">Try one of these:</p>
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
-                  onClick={() => setInput(s)}
-                  className="text-left text-xs border border-border rounded-lg px-3 py-2 hover:bg-muted transition-colors font-mono"
+                  onClick={() => setInput(s.replace(/^[\S]+\s/, ''))}
+                  className="w-full text-left neo-card-hover p-3 text-sm font-bold flex items-center gap-2"
                 >
-                  {s}
+                  <span>{s.split(' ')[0]}</span>
+                  <span>{s.split(' ').slice(1).join(' ')}</span>
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <>
             {messages.map((message) => (
               <div key={message.id}>
-                {/* Text content */}
                 {message.content && (
-                  <div
-                    className={cn(
-                      'flex items-start gap-2.5',
-                      message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                    )}
-                  >
-                    <div className={cn(
-                      'w-6 h-6 rounded-full border border-border flex items-center justify-center shrink-0 mt-0.5',
-                      message.role === 'user' ? 'bg-foreground' : 'bg-background'
-                    )}>
-                      {message.role === 'user'
-                        ? <User className="w-3 h-3 text-background" />
-                        : <Bot className="w-3 h-3 text-foreground" />
-                      }
-                    </div>
-                    <div className={cn(
-                      'rounded-xl px-3.5 py-2.5 text-sm max-w-[80%]',
-                      message.role === 'user'
-                        ? 'bg-foreground text-background rounded-tr-sm'
-                        : 'bg-muted text-foreground rounded-tl-sm'
-                    )}>
+                  <div className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}>
+                    <div className={message.role === 'user' ? 'chat-user' : 'chat-ai'}>
                       {message.content}
                     </div>
                   </div>
                 )}
-
-                {/* Tool results */}
                 {message.toolInvocations?.map((tool) => {
                   if (tool.state !== 'result') return null;
                   const result = tool.result as ToolResult;
-
-                  if (result.type === 'parsed_intent') {
-                    return (
-                      <div key={tool.toolCallId} className="ml-8">
-                        <ParsedIntentCard data={result.data} />
-                      </div>
-                    );
-                  }
-                  if (result.type === 'intent_saved') {
-                    return (
-                      <div key={tool.toolCallId} className="ml-8">
-                        <SavedIntentCard summary={result.summary} intentId={result.intentId} />
-                      </div>
-                    );
-                  }
-                  if (result.type === 'save_error') {
-                    return (
-                      <div key={tool.toolCallId} className="ml-8 mt-2 text-xs text-red-600 flex items-center gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        Error: {result.error}
-                      </div>
-                    );
-                  }
+                  if (result.type === 'parsed_intent') return <ParsedCard key={tool.toolCallId} data={result.data} />;
+                  if (result.type === 'intent_saved') return <SavedCard key={tool.toolCallId} summary={result.summary} />;
                   return null;
                 })}
               </div>
             ))}
-
             {isLoading && (
-              <div className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-full border border-border bg-background flex items-center justify-center shrink-0">
-                  <Bot className="w-3 h-3" />
-                </div>
-                <div className="bg-muted rounded-xl rounded-tl-sm px-3.5 py-2.5">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              <div className="flex justify-start">
+                <div className="chat-ai flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Thinking…</span>
                 </div>
               </div>
             )}
-
             <div ref={bottomRef} />
-          </div>
+          </>
         )}
-      </ScrollArea>
+      </div>
 
-      <Separator />
-
-      {/* Input */}
-      <div className="p-4 space-y-2">
+      <div className="border-t-2 border-[#0A0A0A] p-4 space-y-2 bg-white">
         {messages.length > 0 && !isLoading && (
-          <button
-            onClick={() => reload()}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <RotateCcw className="w-3 h-3" /> Retry last message
+          <button onClick={() => reload()} className="flex items-center gap-1 text-xs font-bold text-[#0A0A0A]/40 hover:text-[#0A0A0A] transition-colors">
+            <RotateCcw className="w-3 h-3" /> Retry
           </button>
         )}
-        <form
-          onSubmit={handleSubmit}
-          className="flex items-end gap-2"
-        >
-          <Textarea
-            ref={textareaRef}
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <textarea
             value={input}
             onChange={handleInputChange}
             onKeyDown={onKeyDown}
-            placeholder="Describe your intent… (↵ to send, Shift+↵ for newline)"
+            placeholder="Tell me what you want to automate… (Enter to send)"
             disabled={isLoading}
             rows={2}
-            className="resize-none flex-1 font-mono text-xs"
+            className="neo-input flex-1 resize-none text-sm"
           />
-          <Button type="submit" size="icon" disabled={isLoading || !input.trim()} className="shrink-0 h-[62px] w-9">
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className="neo-btn px-4 flex items-center justify-center"
+          >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </Button>
+          </button>
         </form>
-        <p className="text-[10px] text-muted-foreground text-right font-mono">
-          Base Sepolia · Claude 3.5 Sonnet
-        </p>
       </div>
     </div>
   );
